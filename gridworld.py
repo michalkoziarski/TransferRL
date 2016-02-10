@@ -21,20 +21,41 @@ class GridWorld:
         self.width = len(self.grid)
         self.height = len(self.grid[0])
 
+        empty_indices = []
+
         for x in range(self.width):
             for y in range(self.height):
+                if self.grid[x][y] == Empty:
+                    empty_indices.append((x, y))
+
                 self.grid[x][y] = self.grid[x][y](self, x, y)
 
+        x, y = random.choice(empty_indices)
+        self.agent = Agent(self, x, y)
+
+        self.total_reward = 0
         self.penalty = GridWorld.penalty
 
     def state(self):
         pass
 
     def terminal(self):
-        pass
+        x, y = self.agent.x, self.agent.y
+
+        return self.grid[x][y].terminal
+
+    def color(self, x, y):
+        if self.agent.x == x and self.agent.y == y:
+            return self.agent.color
+        else:
+            return self.grid[x][y].color
 
     def move(self, direction):
-        pass
+        reward = self.agent.move(direction)
+        
+        self.total_reward += reward
+
+        return reward
 
     @staticmethod
     def generate(entities, width, height):
@@ -46,7 +67,7 @@ class GridWorld:
             if key is not Empty:
                 count += value
 
-        assert count <= width * height
+        assert count < width * height
 
         entities[Empty] = width * height - count
 
@@ -93,7 +114,18 @@ class Agent(Entity):
     color = '#B873FF'
 
     def move(self, direction):
-        pass
+        x, y = self.x, self.y
+
+        if direction == Direction.up and y > 0:
+            y -= 1
+        if direction == Direction.down and y < self.grid_world.height - 1:
+            y += 1
+        if direction == Direction.left and x > 0:
+            x -= 1
+        if direction == Direction.right and x < self.grid_world.width - 1:
+            x += 1
+
+        return self.grid_world.grid[x][y].interact(self)
 
 
 class Block(Entity):
@@ -106,8 +138,11 @@ class Block(Entity):
         self.reward = self.__class__.reward
         self.terminal = self.__class__.terminal
 
-    def interact(self, block):
-        pass
+    def interact(self, agent):
+        agent.x = self.x
+        agent.y = self.y
+
+        return self.reward
 
 
 class Empty(Block):
@@ -159,12 +194,12 @@ class Display:
     def xy2rect(self, x, y):
         return pygame.Rect(x * self.field_size + 1, y * self.field_size + 1, self.field_size - 2, self.field_size - 2)
 
-    def draw(self, grid):
+    def draw(self, grid_world):
         self.screen.fill((255, 255, 255))
 
         for x in range(self.width):
             for y in range(self.height):
-                pygame.draw.rect(self.screen, pygame.Color(grid[x][y].color), self.xy2rect(x, y))
+                pygame.draw.rect(self.screen, pygame.Color(grid_world.color(x, y)), self.xy2rect(x, y))
 
         pygame.display.update()
 
@@ -179,7 +214,7 @@ if __name__ == '__main__':
     }
 
     while not gw.terminal():
-        display.draw(gw.grid)
+        display.draw(gw)
 
         direction = None
 
