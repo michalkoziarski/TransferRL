@@ -1,9 +1,12 @@
 import pygame
+import random
+import time
+import sys
 
 from enum import Enum
 
 
-Direction = Enum('Direction', 'none left right up down')
+Direction = Enum('Direction', 'left right up down')
 
 
 class GridWorld:
@@ -27,9 +30,38 @@ class GridWorld:
     def state(self):
         pass
 
+    def terminal(self):
+        pass
+
+    def move(self, direction):
+        pass
+
     @staticmethod
     def generate(entities, width, height):
-        pass
+        grid = [[None for _ in range(height)] for _ in range(width)]
+
+        count = 0
+
+        for key, value in entities.iteritems():
+            if key is not Empty:
+                count += value
+
+        assert count <= width * height
+
+        entities[Empty] = width * height - count
+
+        indices = [(x, y) for x in range(width) for y in range(height)]
+        random.shuffle(indices)
+        index = 0
+
+        for key, value in entities.iteritems():
+            for _ in range(value):
+                x, y = indices[index]
+                index += 1
+
+                grid[x][y] = key
+
+        return grid
 
 
 class CounterMetaClass(type):
@@ -132,6 +164,35 @@ class Display:
 
         for x in range(self.width):
             for y in range(self.height):
-                pygame.draw.rect(self.screen, grid[x][y].color, self.xy2rect(x, y))
+                pygame.draw.rect(self.screen, pygame.Color(grid[x][y].color), self.xy2rect(x, y))
 
         pygame.display.update()
+
+
+if __name__ == '__main__':
+    gw = GridWorld(entities={Goal: 1, Water: 5})
+    display = Display()
+
+    action_mappings = {
+        pygame.K_LEFT: Direction.left, pygame.K_UP: Direction.up,
+        pygame.K_RIGHT: Direction.right, pygame.K_DOWN: Direction.down
+    }
+
+    while not gw.terminal():
+        display.draw(gw.grid)
+
+        direction = None
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                try:
+                    direction = action_mappings[event.key]
+                except KeyError:
+                    continue
+
+        if direction:
+            gw.move(direction)
+
+        time.sleep(0.05)
