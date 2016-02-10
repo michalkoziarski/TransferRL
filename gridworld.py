@@ -127,9 +127,6 @@ class Display:
     def xy2rect(self, x, y):
         return pygame.Rect(x * self.field_size + 1, y * self.field_size + 1, self.field_size - 2, self.field_size - 2)
 
-    def xy2color(self, grid, x, y):
-        return pygame.Color(self.colors[grid.get(x, y)])
-
     def draw(self, grid):
         self.screen.fill((255, 255, 255))
 
