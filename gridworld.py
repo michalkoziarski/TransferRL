@@ -10,7 +10,7 @@ Direction = Enum('Direction', 'left right up down')
 
 
 class GridWorld:
-    penalty = 0.01
+    PENALTY = 0.01
 
     def __init__(self, grid=None, width=10, height=10, entities=None):
         if grid:
@@ -34,25 +34,29 @@ class GridWorld:
         self.agent = Agent(self, x, y)
 
         self.total_reward = 0
-        self.penalty = GridWorld.penalty
 
     def state(self):
-        pass
+        # TODO : doesn't work; meta class should probably be in block
+        grid_or_agent = lambda x, y: self.grid[x][y].id if self.agent.x == x and self.agent.y == y else self.agent.id
+
+        return [[grid_or_agent(x, y) for y in range(self.height)] for x in range(self.width)]
 
     def terminal(self):
         x, y = self.agent.x, self.agent.y
 
-        return self.grid[x][y].terminal
+        return self.grid[x][y].terminal()
 
     def color(self, x, y):
         if self.agent.x == x and self.agent.y == y:
-            return self.agent.color
+            return self.agent.color()
         else:
-            return self.grid[x][y].color
+            return self.grid[x][y].color()
 
     def move(self, direction):
-        reward = self.agent.move(direction)
-        
+        self.agent.move(direction)
+
+        reward = self.grid[self.agent.x][self.agent.y].reward() - GridWorld.PENALTY
+
         self.total_reward += reward
 
         return reward
@@ -89,7 +93,7 @@ class CounterMetaClass(type):
     counter = 0
 
     def __new__(mcs, name, bases, attributes):
-        attributes['id'] = CounterMetaClass.counter
+        attributes['ID'] = CounterMetaClass.counter
         CounterMetaClass.counter += 1
 
         return type.__new__(mcs, name, bases, attributes)
@@ -98,20 +102,22 @@ class CounterMetaClass(type):
 class Entity:
     __metaclass__ = CounterMetaClass
 
-    color = '#000000'
+    COLOR = '#000000'
 
     def __init__(self, grid_world, x, y):
         self.grid_world = grid_world
         self.x = x
         self.y = y
-        self.color = self.__class__.color
 
     def id(self):
-        return self.id
+        return self.__class__.ID
+
+    def color(self):
+        return self.__class__.COLOR
 
 
 class Agent(Entity):
-    color = '#B873FF'
+    COLOR = '#B873FF'
 
     def move(self, direction):
         x, y = self.x, self.y
@@ -129,57 +135,117 @@ class Agent(Entity):
 
 
 class Block(Entity):
-    reward = 0
-    terminal = False
+    REWARD = 0
+    TERMINAL = False
 
     def __init__(self, grid, x, y):
         super(Block, self).__init__(grid, x, y)
 
-        self.reward = self.__class__.reward
-        self.terminal = self.__class__.terminal
+    def reward(self):
+        return self.__class__.REWARD
+
+    def terminal(self):
+        return self.__class__.TERMINAL
 
     def interact(self, agent):
         agent.x = self.x
         agent.y = self.y
 
-        return self.reward
-
 
 class Empty(Block):
-    color = '#D4D1CA'
+    COLOR = '#D4D1CA'
 
 
 class Goal(Block):
-    reward = 1
-    terminal = True
-    color = '#FFD225'
+    REWARD = 1
+    TERMINAL = True
+    COLOR = '#FFD225'
 
 
 class Water(Block):
-    reward = -0.1
-    color = '#0A73FF'
+    REWARD = -0.1
+    COLOR = '#0A73FF'
 
 
 class Fire(Block):
-    reward = -1
-    terminal = True
-    color = '#B20702'
+    REWARD = -1
+    TERMINAL = True
+    COLOR = '#B20702'
 
 
 class Wall(Block):
-    color = '#422C25'
+    COLOR = '#422C25'
+
+    def interact(self, agent):
+        pass
 
 
 class Portal(Block):
-    color = '#481B5E'
+    COLOR = '#481B5E'
+
+    def interact(self, agent):
+        portals = []
+
+        for x in range(self.grid_world.width):
+            for y in range(self.grid_world.height):
+                if isinstance(self.grid_world.grid[x][y], Portal) and (x, y) != (self.x, self.y):
+                    portals.append((x, y))
+
+        if len(portals) > 0:
+            x, y = random.choice(portals)
+        else:
+            x, y = self.x, self.y
+
+        agent.x = x
+        agent.y = y
 
 
 class Switch(Block):
-    color = '#218B87'
+    COLOR = '#218B87'
+
+    def __init__(self, grid, x, y):
+        super(Switch, self).__init__(grid, x, y)
+
+        self.active = True
+
+    def id(self):
+        return self.__class__.ID if self.active else Empty.ID
+
+    def color(self):
+        return self.__class__.COLOR if self.active else Empty.COLOR
+
+    def interact(self, agent):
+        if self.active:
+            for x in range(self.grid_world.width):
+                for y in range(self.grid_world.height):
+                    if isinstance(self.grid_world.grid[x][y], Switch):
+                        self.grid_world.grid[x][y].active = False
+
+                    if isinstance(self.grid_world.grid[x][y], Door):
+                        self.grid_world.grid[x][y].open = True
+
+        agent.x = self.x
+        agent.y = self.y
 
 
 class Door(Block):
-    color = '#B63F00'
+    COLOR = '#B63F00'
+
+    def __init__(self, grid, x, y):
+        super(Door, self).__init__(grid, x, y)
+
+        self.open = False
+
+    def id(self):
+        return self.__class__.ID if not self.open else Empty.ID
+
+    def color(self):
+        return self.__class__.COLOR if not self.open else Empty.COLOR
+
+    def interact(self, agent):
+        if self.open:
+            agent.x = self.x
+            agent.y = self.y
 
 
 class Display:
@@ -205,7 +271,7 @@ class Display:
 
 
 if __name__ == '__main__':
-    gw = GridWorld(entities={Goal: 1, Water: 5})
+    gw = GridWorld(entities={Goal: 1, Wall: 15, Switch: 1, Door: 3})
     display = Display()
 
     action_mappings = {
