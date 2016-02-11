@@ -36,10 +36,10 @@ class GridWorld:
         self.total_reward = 0
 
     def state(self):
-        # TODO : doesn't work; meta class should probably be in block
-        grid_or_agent = lambda x, y: self.grid[x][y].id if self.agent.x == x and self.agent.y == y else self.agent.id
+        return [[self.id(x, y) for y in range(self.height)] for x in range(self.width)]
 
-        return [[grid_or_agent(x, y) for y in range(self.height)] for x in range(self.width)]
+    def id(self, x, y):
+        return self.agent.id() if self.agent.x == x and self.agent.y == y else self.grid[x][y].id()
 
     def terminal(self):
         x, y = self.agent.x, self.agent.y
@@ -159,7 +159,31 @@ class Empty(Block):
 class Goal(Block):
     REWARD = 1
     TERMINAL = True
+    COLOR = '#49732C'
+
+
+class Coin(Block):
+    REWARD = 0.1
     COLOR = '#FFD225'
+
+    def __init__(self, grid, x, y):
+        super(Coin, self).__init__(grid, x, y)
+
+        self.active = True
+
+    def id(self):
+        return self.__class__.ID if self.active else Empty.ID
+
+    def color(self):
+        return self.__class__.COLOR if self.active else Empty.COLOR
+
+    def reward(self):
+        return self.__class__.REWARD if self.active else Empty.REWARD
+
+    def interact(self, agent):
+        super(Coin, self).interact(agent)
+
+        self.active = False
 
 
 class Water(Block):
@@ -271,7 +295,7 @@ class Display:
 
 
 if __name__ == '__main__':
-    gw = GridWorld(entities={Goal: 1, Wall: 15, Switch: 1, Door: 3})
+    gw = GridWorld(entities={Goal: 1, Wall: 15, Switch: 1, Door: 3, Portal: 3, Fire: 2, Water: 10, Coin: 10})
     display = Display()
 
     action_mappings = {
