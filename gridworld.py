@@ -12,7 +12,7 @@ Direction = Enum('Direction', 'left right up down')
 class GridWorld:
     PENALTY = 0.01
 
-    def __init__(self, grid=None, width=10, height=10, entities=None):
+    def __init__(self, grid=None, width=16, height=16, entities=None):
         if grid:
             self.grid = grid
         else:
@@ -273,7 +273,7 @@ class Door(Block):
 
 
 class Display:
-    def __init__(self, width=10, height=10, field_size=30):
+    def __init__(self, width=16, height=16, field_size=16):
         pygame.init()
 
         self.width = width
