@@ -52,6 +52,15 @@ class GridWorld:
         else:
             return self.grid[x][y].color()
 
+    def surface(self, x, y, size):
+        if self.agent.x == x and self.agent.y == y:
+            return self.agent.surface(size)
+        else:
+            return self.grid[x][y].surface(size)
+
+    def act(self, action):
+        return self.move(Direction(action + 1))
+
     def move(self, direction):
         self.agent.move(direction)
 
@@ -103,6 +112,8 @@ class Entity:
     __metaclass__ = CounterMetaClass
 
     COLOR = '#000000'
+    IMG = None
+    SURFACE = None
 
     def __init__(self, grid_world, x, y):
         self.grid_world = grid_world
@@ -115,9 +126,23 @@ class Entity:
     def color(self):
         return self.__class__.COLOR
 
+    def surface(self, size):
+        return self.__class__._surface(size)
+
+    @classmethod
+    def _surface(cls, size):
+        if cls.IMG:
+            if not cls.SURFACE:
+                cls.SURFACE = pygame.transform.scale(pygame.image.load(cls.IMG), (size, size))
+
+            return cls.SURFACE
+        else:
+            return None
+
 
 class Agent(Entity):
     COLOR = '#B873FF'
+    IMG = 'img/agent.png'
 
     def move(self, direction):
         x, y = self.x, self.y
@@ -160,11 +185,13 @@ class Goal(Block):
     REWARD = 1
     TERMINAL = True
     COLOR = '#49732C'
+    IMG = 'img/goal.png'
 
 
 class Coin(Block):
     REWARD = 0.1
     COLOR = '#FFD225'
+    IMG = 'img/coin.png'
 
     def __init__(self, grid, x, y):
         super(Coin, self).__init__(grid, x, y)
@@ -176,6 +203,9 @@ class Coin(Block):
 
     def color(self):
         return self.__class__.COLOR if self.active else Empty.COLOR
+
+    def surface(self, size):
+        return self.__class__._surface(size) if self.active else Empty._surface(size)
 
     def reward(self):
         return self.__class__.REWARD if self.active else Empty.REWARD
@@ -189,16 +219,19 @@ class Coin(Block):
 class Water(Block):
     REWARD = -0.1
     COLOR = '#0A73FF'
+    IMG = 'img/water.png'
 
 
 class Fire(Block):
     REWARD = -1
     TERMINAL = True
     COLOR = '#B20702'
+    IMG = 'img/fire.png'
 
 
 class Wall(Block):
     COLOR = '#422C25'
+    IMG = 'img/wall.png'
 
     def interact(self, agent):
         pass
@@ -206,6 +239,7 @@ class Wall(Block):
 
 class Portal(Block):
     COLOR = '#481B5E'
+    IMG = 'img/portal.png'
 
     def interact(self, agent):
         portals = []
@@ -226,6 +260,7 @@ class Portal(Block):
 
 class Switch(Block):
     COLOR = '#218B87'
+    IMG = 'img/switch.png'
 
     def __init__(self, grid, x, y):
         super(Switch, self).__init__(grid, x, y)
@@ -237,6 +272,9 @@ class Switch(Block):
 
     def color(self):
         return self.__class__.COLOR if self.active else Empty.COLOR
+
+    def surface(self, size):
+        return self.__class__._surface(size) if self.active else Empty._surface(size)
 
     def interact(self, agent):
         if self.active:
@@ -254,6 +292,7 @@ class Switch(Block):
 
 class Door(Block):
     COLOR = '#B63F00'
+    IMG = 'img/door.png'
 
     def __init__(self, grid, x, y):
         super(Door, self).__init__(grid, x, y)
@@ -266,6 +305,9 @@ class Door(Block):
     def color(self):
         return self.__class__.COLOR if not self.open else Empty.COLOR
 
+    def surface(self, size):
+        return self.__class__._surface(size) if not self.open else Empty._surface(size)
+
     def interact(self, agent):
         if self.open:
             agent.x = self.x
@@ -273,7 +315,7 @@ class Door(Block):
 
 
 class Display:
-    def __init__(self, width=16, height=16, field_size=16):
+    def __init__(self, width=16, height=16, field_size=32):
         pygame.init()
 
         self.width = width
@@ -289,7 +331,12 @@ class Display:
 
         for x in range(self.width):
             for y in range(self.height):
-                pygame.draw.rect(self.screen, pygame.Color(grid_world.color(x, y)), self.xy2rect(x, y))
+                surface = grid_world.surface(x, y, self.field_size)
+
+                if surface:
+                    self.screen.blit(surface, (x * self.field_size, y * self.field_size))
+                else:
+                    pygame.draw.rect(self.screen, pygame.Color(grid_world.color(x, y)), self.xy2rect(x, y))
 
         pygame.display.update()
 
