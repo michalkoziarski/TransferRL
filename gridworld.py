@@ -6,7 +6,7 @@ import sys
 from enum import Enum
 
 
-Direction = Enum('Direction', 'left right up down')
+Direction = Enum('Direction', 'stay left right up down')
 
 
 class GridWorld:
@@ -33,7 +33,8 @@ class GridWorld:
         x, y = random.choice(empty_indices)
         self.agent = Agent(self, x, y)
 
-        self.total_reward = 0
+        self._total_reward = 0
+        self._t = 0
 
     def state(self):
         return [[self.id(x, y) for y in range(self.height)] for x in range(self.width)]
@@ -45,6 +46,12 @@ class GridWorld:
         x, y = self.agent.x, self.agent.y
 
         return self.grid[x][y].terminal()
+
+    def total_reward(self):
+        return self._total_reward
+
+    def t(self):
+        return self._t
 
     def color(self, x, y):
         if self.agent.x == x and self.agent.y == y:
@@ -66,7 +73,8 @@ class GridWorld:
 
         reward = self.grid[self.agent.x][self.agent.y].reward() - GridWorld.PENALTY
 
-        self.total_reward += reward
+        self._total_reward += reward
+        self._t += 1
 
         return reward
 
@@ -317,6 +325,7 @@ class Door(Block):
 class Display:
     def __init__(self, width=16, height=16, field_size=32):
         pygame.init()
+        pygame.display.set_caption('GridWorld')
 
         self.width = width
         self.height = height
