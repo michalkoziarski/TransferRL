@@ -7,16 +7,17 @@ from collections import deque
 
 
 ACTIONS = 5
-WIDTH = 8
-HEIGHT = 8
+WIDTH = 12
+HEIGHT = 12
 MEMORY = 1
 REWARD_DECAY = 0.99
-REPLAY_MEMORY_LENGTH = 1000
+REPLAY_MEMORY_LENGTH = 10000
 BATCH_SIZE = 32
 FINAL_EXPLORATION_RATE = 0.05
 INITIAL_EXPLORATION_RATE = 1.0
-EXPLORATION_RATE_DECAY = 500
+EXPLORATION_RATE_DECAY = 1000
 EPISODE_LENGTH = 256
+DISPLAY = False
 DISPLAY_STEP = 10
 EPISODES = 1000000
 
@@ -32,13 +33,14 @@ replay_memory = deque()
 exploration_rate = INITIAL_EXPLORATION_RATE
 sess = tf.InteractiveSession()
 sess.run(tf.initialize_all_variables())
-display = Display(width=WIDTH, height=HEIGHT)
+if DISPLAY:
+    display = Display(width=WIDTH, height=HEIGHT)
 
 for episode in range(EPISODES):
-    gw = GridWorld(entities={Goal: 1}, width=WIDTH, height=HEIGHT)
+    gw = GridWorld(entities={Goal: 5}, width=WIDTH, height=HEIGHT)
 
     while True:
-        if episode % DISPLAY_STEP == 0:
+        if DISPLAY and episode % DISPLAY_STEP == 0:
             display.draw(gw)
             time.sleep(0.01)
 
