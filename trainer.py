@@ -7,8 +7,8 @@ from collections import deque
 
 
 ACTIONS = 5
-WIDTH = 16
-HEIGHT = 16
+WIDTH = 8
+HEIGHT = 8
 MEMORY = 1
 REWARD_DECAY = 0.99
 REPLAY_MEMORY_LENGTH = 1000
@@ -17,8 +17,8 @@ FINAL_EXPLORATION_RATE = 0.05
 INITIAL_EXPLORATION_RATE = 1.0
 EXPLORATION_RATE_DECAY = 500
 EPISODE_LENGTH = 256
-DISPLAY_STEP = 100
-EPISODES = 10000
+DISPLAY_STEP = 10
+EPISODES = 1000000
 
 network = Network([WIDTH, HEIGHT, MEMORY], [ACTIONS])
 
@@ -32,10 +32,10 @@ replay_memory = deque()
 exploration_rate = INITIAL_EXPLORATION_RATE
 sess = tf.InteractiveSession()
 sess.run(tf.initialize_all_variables())
-display = Display()
+display = Display(width=WIDTH, height=HEIGHT)
 
 for episode in range(EPISODES):
-    gw = GridWorld(entities={Goal: 1})
+    gw = GridWorld(entities={Goal: 1}, width=WIDTH, height=HEIGHT)
 
     while True:
         if episode % DISPLAY_STEP == 0:
