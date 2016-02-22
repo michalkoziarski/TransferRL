@@ -68,7 +68,7 @@ else:
         f.write('episode,reward,steps\n')
 
     with open(os.path.join('models', model_name, 'params.json'), 'w') as f:
-        json.dump(params, f)
+        json.dump(params, f, indent=2, separators=(',', ': '))
 
     with open(os.path.join('models', model_name, 'replay_memory.pickle'), 'wb') as f:
         cPickle.dump(replay_memory, f)
@@ -135,7 +135,7 @@ while params['episode'] < params['episodes']:
             f.write('%d,%.2f,%d\n' % (params['episode'], gw.total_reward(), gw.t()))
 
         with open(os.path.join('models', model_name, 'params.json'), 'w') as f:
-            json.dump(params, f)
+            json.dump(params, f, indent=2, separators=(',', ': '))
 
         with open(os.path.join('models', model_name, 'replay_memory.pickle'), 'wb') as f:
             cPickle.dump(replay_memory, f)
