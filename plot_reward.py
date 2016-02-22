@@ -10,5 +10,5 @@ model_name = sys.argv[1]
 
 df = pd.read_csv(os.path.join('models', model_name, 'log.csv'))
 
-sns.tsplot(data=df['reward'], t=df['episode'])
+sns.tsplot(data=df['reward'], time=df['episode'])
 sns.plt.show()
