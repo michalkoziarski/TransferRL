@@ -130,9 +130,12 @@ while params['episode'] < params['episodes']:
 
     with open(os.path.join('models', model_name, 'log.csv'), 'a') as f:
         f.write('%d,%.2f,%d\n' % (params['episode'], gw.total_reward(), gw.t()))
+        
+    with open(os.path.join('models', model_name, 'params.json'), 'w') as f:
+        json.dump(params, f)
 
     if params['episode'] % params['save_step'] == 0:
-        'Saving model...'
+        print 'Saving model...'
 
         with open(os.path.join('models', model_name, 'replay_memory.pickle'), 'wb') as f:
             cPickle.dump(replay_memory, f)
