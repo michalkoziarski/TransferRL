@@ -6,7 +6,7 @@ import sys
 from enum import Enum
 
 
-Direction = Enum('Direction', 'stay left right up down')
+Direction = Enum('Direction', 'left right up down')
 
 
 class GridWorld:
