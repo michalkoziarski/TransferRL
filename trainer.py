@@ -132,6 +132,9 @@ while params['episode'] < params['episodes']:
         f.write('%d,%.2f,%d\n' % (params['episode'], gw.total_reward(), gw.t()))
 
     if params['episode'] % params['save_step'] == 0:
+        with open(os.path.join('models', model_name, 'replay_memory.pickle'), 'wb') as f:
+            cPickle.dump(replay_memory, f)
+
         saver.save(sess, os.path.join('models', model_name, 'model.ckpt'))
 
     if params['episode'] <= params['exploration_rate_decay']:
