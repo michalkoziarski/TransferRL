@@ -10,7 +10,6 @@ from collections import deque
 
 
 sess = tf.InteractiveSession()
-saver = tf.train.Saver()
 
 if len(sys.argv) > 1:
     model_name = sys.argv[1]
@@ -35,6 +34,7 @@ if os.path.exists(os.path.join('models', model_name)):
     cost = tf.reduce_mean(tf.square(_rewards - _predicted_rewards))
     train_step = tf.train.AdamOptimizer(params['learning_rate']).minimize(cost)
 
+    saver = tf.train.Saver()
     saver.restore(sess, os.path.join('models', model_name, 'model.ckpt'))
 else:
     print 'Initializing model %s...' % model_name
@@ -73,6 +73,7 @@ else:
     with open(os.path.join('models', model_name, 'replay_memory.pickle'), 'wb') as f:
         cPickle.dump(replay_memory, f)
 
+    saver = tf.train.Saver()
     saver.save(sess, os.path.join('models', model_name, 'model.ckpt'))
 
 if params['display']:
