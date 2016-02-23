@@ -363,7 +363,7 @@ class Display:
                 else:
                     pygame.draw.rect(self.screen, pygame.Color(grid_world.color(x, y)), self.xy2rect(x, y))
 
-        if rewards:
+        if rewards is not None:
             for action in range(len(rewards)):
                 x, y = (grid_world.agent.x, grid_world.agent.y)
 
