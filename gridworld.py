@@ -82,17 +82,27 @@ class GridWorld:
     def generate(entities, width, height):
         grid = [[None for _ in range(height)] for _ in range(width)]
 
+        for x in range(width):
+            grid[x][0] = Wall
+            grid[x][-1] = Wall
+
+        for y in range(height):
+            grid[0][y] = Wall
+            grid[-1][y] = Wall
+
         count = 0
 
         for key, value in entities.iteritems():
             if key is not Empty:
                 count += value
 
-        assert count < width * height
+        empty_spaces = (width - 2) * (height - 2)
 
-        entities[Empty] = width * height - count
+        assert count < empty_spaces
 
-        indices = [(x, y) for x in range(width) for y in range(height)]
+        entities[Empty] = empty_spaces - count
+
+        indices = [(x, y) for x in range(1, width - 1) for y in range(1, height - 1)]
         random.shuffle(indices)
         index = 0
 
