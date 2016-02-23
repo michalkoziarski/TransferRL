@@ -38,6 +38,7 @@ index = 0
 while index + batch <= len(rewards):
     mean_rewards.append(np.mean(rewards[index:(index + batch)]))
     mean_episodes.append(index + batch / 2)
+    index += batch
 
 sns.tsplot(data=mean_rewards, time=mean_episodes)
 sns.plt.show()
