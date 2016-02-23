@@ -197,6 +197,7 @@ class Block(Entity):
 
 class Empty(Block):
     COLOR = '#D4D1CA'
+    IMG = 'img/ground.jpg'
 
 
 class Goal(Block):
@@ -350,6 +351,9 @@ class Display:
 
         for x in range(self.width):
             for y in range(self.height):
+                if grid_world.grid[x][y] is not Empty:
+                    self.screen.blit(Empty._surface(self.field_size), (x * self.field_size, y * self.field_size))
+
                 surface = grid_world.surface(x, y, self.field_size)
 
                 if surface:
