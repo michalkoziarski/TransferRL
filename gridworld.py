@@ -2,6 +2,7 @@ import pygame
 import random
 import time
 import sys
+import numpy as np
 
 from enum import Enum
 
@@ -343,10 +344,11 @@ class Display:
         self.field_size = field_size
         self.screen = pygame.display.set_mode((self.width * field_size, self.height * field_size))
 
-    def xy2rect(self, x, y):
-        return pygame.Rect(x * self.field_size + 1, y * self.field_size + 1, self.field_size - 2, self.field_size - 2)
+    def xy2rect(self, x, y, padding=1):
+        return pygame.Rect(x * self.field_size + padding, y * self.field_size + padding,
+                           self.field_size - 2 * padding, self.field_size - 2 * padding)
 
-    def draw(self, grid_world):
+    def draw(self, grid_world, rewards=None):
         self.screen.fill((255, 255, 255))
 
         for x in range(self.width):
@@ -360,6 +362,35 @@ class Display:
                     self.screen.blit(surface, (x * self.field_size, y * self.field_size))
                 else:
                     pygame.draw.rect(self.screen, pygame.Color(grid_world.color(x, y)), self.xy2rect(x, y))
+
+        if rewards:
+            for action in range(len(rewards)):
+                x, y = (grid_world.agent.x, grid_world.agent.y)
+
+                direction = Direction(action + 1)
+
+                if direction == Direction.up:
+                    y -= 1
+                if direction == Direction.down:
+                    y += 1
+                if direction == Direction.left:
+                    x -= 1
+                if direction == Direction.right:
+                    x += 1
+
+                rect = self.xy2rect(x, y)
+                font = pygame.font.Font(None, 24)
+
+                if action == np.argmax(rewards):
+                    color = '#8C151B'
+                else:
+                    color = '#DADAD5'
+
+                text = font.render('%.1f' % rewards[action], 1, pygame.Color(color))
+                text_position = text.get_rect()
+                text_position.center = rect.center
+
+                self.screen.blit(text, text_position)
 
         pygame.display.update()
 

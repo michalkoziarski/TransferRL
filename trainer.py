@@ -83,16 +83,17 @@ while params['episode'] < params['episodes']:
     gw = GridWorld(entities={Goal: 1}, width=params['width'], height=params['height'])
 
     while True:
-        if params['display'] and params['episode'] % params['display_step'] == 0:
-            display.draw(gw)
-            time.sleep(0.01)
-
         state = np.reshape(gw.state(), [-1, params['width'], params['height'], params['memory']])
+        predicted_rewards = network.output.eval(feed_dict={network.state: state})
+
+        if params['display'] and params['episode'] % params['display_step'] == 0:
+            display.draw(gw, predicted_rewards)
+            time.sleep(0.01)
 
         if random.random() <= params['exploration_rate']:
             action = random.randrange(params['actions'])
         else:
-            action = np.argmax(network.output.eval(feed_dict={network.state: state}))
+            action = np.argmax(predicted_rewards)
 
         reward = gw.act(action)
         next_state = np.reshape(gw.state(), [-1, params['width'], params['height'], params['memory']])
