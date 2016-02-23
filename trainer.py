@@ -16,6 +16,11 @@ if len(sys.argv) > 1:
 else:
     model_name = time.strftime('%Y_%m_%d_%H-%M-%S', time.gmtime())
 
+if len(sys.argv) > 2:
+    display_flag = bool(sys.argv[2])
+else:
+    display_flag = False
+
 if os.path.exists(os.path.join('models', model_name)):
     print 'Loading model %s...' % model_name
 
@@ -76,7 +81,7 @@ else:
     saver = tf.train.Saver()
     saver.save(sess, os.path.join('models', model_name, 'model.ckpt'))
 
-if params['display']:
+if display_flag or params['display']:
     display = Display(width=params['width'], height=params['height'])
 
 while params['episode'] < params['episodes']:
@@ -86,7 +91,7 @@ while params['episode'] < params['episodes']:
         state = np.reshape(gw.state(), [-1, params['width'], params['height'], params['memory']])
         predicted_rewards = network.output.eval(feed_dict={network.state: state})
 
-        if params['display'] and params['episode'] % params['display_step'] == 0:
+        if (display_flag or params['display']) and params['episode'] % params['display_step'] == 0:
             display.draw(gw, predicted_rewards[0])
             time.sleep(0.01)
 
