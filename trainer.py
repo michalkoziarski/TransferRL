@@ -87,7 +87,7 @@ while params['episode'] < params['episodes']:
         predicted_rewards = network.output.eval(feed_dict={network.state: state})
 
         if params['display'] and params['episode'] % params['display_step'] == 0:
-            display.draw(gw, predicted_rewards)
+            display.draw(gw, predicted_rewards[0])
             time.sleep(0.01)
 
         if random.random() <= params['exploration_rate']:
