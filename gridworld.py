@@ -13,7 +13,7 @@ Direction = Enum('Direction', 'left right up down')
 class GridWorld:
     PENALTY = 0.01
 
-    def __init__(self, grid=None, width=16, height=16, entities=None):
+    def __init__(self, grid=None, width=8, height=8, entities=None):
         if grid:
             self.grid = grid
         else:
@@ -335,7 +335,7 @@ class Door(Block):
 
 
 class Display:
-    def __init__(self, width=16, height=16, field_size=32):
+    def __init__(self, width=8, height=8, field_size=32):
         pygame.init()
         pygame.display.set_caption('GridWorld')
 
@@ -379,14 +379,14 @@ class Display:
                     x += 1
 
                 rect = self.xy2rect(x, y)
-                font = pygame.font.Font(None, 24)
+                font = pygame.font.Font(None, 18)
 
                 if action == np.argmax(rewards):
                     color = '#8C151B'
                 else:
                     color = '#DADAD5'
 
-                text = font.render('%.1f' % rewards[action], 1, pygame.Color(color))
+                text = font.render('%.2f' % rewards[action], 1, pygame.Color(color))
                 text_position = text.get_rect()
                 text_position.center = rect.center
 
@@ -396,7 +396,7 @@ class Display:
 
 
 if __name__ == '__main__':
-    gw = GridWorld(entities={Goal: 1, Wall: 15, Switch: 1, Door: 3, Portal: 3, Fire: 2, Water: 10, Coin: 10})
+    gw = GridWorld(entities={Goal: 1})
     display = Display()
 
     action_mappings = {
