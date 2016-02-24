@@ -1,5 +1,4 @@
 import tensorflow as tf
-import numpy as np
 import json
 import cPickle
 import os
@@ -88,7 +87,7 @@ while params['episode'] < params['episodes']:
     gw = GridWorld(entities={Goal: 1}, width=params['width'], height=params['height'])
 
     while True:
-        state = np.reshape(gw.state(), [-1, params['width'], params['height'], params['memory']])
+        state = gw.state(memory=params['memory'])
         predicted_rewards = network.output.eval(feed_dict={network.state: state})
 
         if (display_flag or params['display']) and params['episode'] % params['display_step'] == 0:
@@ -101,7 +100,7 @@ while params['episode'] < params['episodes']:
             action = np.argmax(predicted_rewards)
 
         reward = gw.act(action)
-        next_state = np.reshape(gw.state(), [-1, params['width'], params['height'], params['memory']])
+        next_state = gw.state(memory=params['memory'])
 
         terminal = (True if (gw.terminal() or gw.t() >= params['episode_length']) else False)
 

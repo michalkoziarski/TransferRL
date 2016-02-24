@@ -2,7 +2,7 @@
   "actions": 4,
   "width": 8,
   "height": 8,
-  "memory": 1,
+  "memory": 2,
   "learning_rate": 1e-5,
   "reward_decay": 0.99,
   "replay_memory_size": 10000,

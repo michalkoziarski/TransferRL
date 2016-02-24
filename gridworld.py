@@ -33,11 +33,22 @@ class GridWorld:
 
         x, y = random.choice(empty_indices)
         self.agent = Agent(self, x, y)
-
+        self.history = [self.current_state()]
         self._total_reward = 0
         self._t = 0
 
-    def state(self):
+    def state(self, memory=1):
+        result = []
+        missing_length = np.max([0, memory - len(self.history)])
+
+        for _ in range(missing_length):
+            result.append(self.history[0])
+
+        result += self.history[-memory:]
+
+        return np.reshape(result, [-1, memory, self.width, self.height]).transpose(0, 2, 3, 1)
+
+    def current_state(self):
         return [[self.id(x, y) for y in range(self.height)] for x in range(self.width)]
 
     def id(self, x, y):
@@ -73,6 +84,8 @@ class GridWorld:
         self.agent.move(direction)
 
         reward = self.grid[self.agent.x][self.agent.y].reward() - GridWorld.PENALTY
+
+        self.history.append(self.current_state())
 
         self._total_reward += reward
         self._t += 1
