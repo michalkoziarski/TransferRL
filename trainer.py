@@ -115,7 +115,7 @@ while params['frame'] < params['frames']:
         if len(replay_memory) >= params['replay_memory_size']:
             replay_memory.popleft()
 
-        if len(replay_memory) >= params['batch_size']:
+        if params['frame'] >= params['replay_start']:
             batch = random.sample(replay_memory, params['batch_size'])
 
             states = [b[0] for b in batch]
