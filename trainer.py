@@ -54,6 +54,7 @@ else:
 
     params['model_name'] = model_name
     params['episode'] = 0
+    params['frame'] = 0
     params['exploration_rate'] = params['initial_exploration_rate']
 
     replay_memory = deque()
@@ -71,7 +72,7 @@ else:
     sess.run(tf.initialize_all_variables())
 
     with open(os.path.join('models', model_name, 'log.csv'), 'w') as f:
-        f.write('episode,reward,steps\n')
+        f.write('frame,reward\n')
 
     with open(os.path.join('models', model_name, 'params.json'), 'w') as f:
         json.dump(params, f, indent=2, separators=(',', ': '))
@@ -85,7 +86,7 @@ else:
 if display_flag or params['display']:
     display = Display(width=params['width'], height=params['height'])
 
-while params['episode'] < params['episodes']:
+while params['frame'] < params['frames']:
     gw = GridWorld(entities={Goal: 1}, width=params['width'], height=params['height'])
 
     while True:
@@ -103,6 +104,9 @@ while params['episode'] < params['episodes']:
 
         reward = gw.act(action)
         next_state = gw.state(memory=params['memory'])
+
+        with open(os.path.join('models', model_name, 'log.csv'), 'a') as f:
+            f.write('%d,%.2f\n' % (params['frame'], reward))
 
         terminal = (True if (gw.terminal() or gw.t() >= params['episode_length']) else False)
 
@@ -129,14 +133,13 @@ while params['episode'] < params['episodes']:
 
             train_step.run(feed_dict={_actions: actions, _rewards: rewards, network.state: states})
 
+        params['frame'] += 1
+
         if terminal:
             break
 
     print 'Episode #%d: total reward of %.2f in %d steps, with exploration rate %.2f' % \
           (params['episode'], gw.total_reward(), gw.t(), params['exploration_rate'])
-
-    with open(os.path.join('models', model_name, 'log.csv'), 'a') as f:
-        f.write('%d,%.2f,%d\n' % (params['episode'], gw.total_reward(), gw.t()))
 
     if params['episode'] % params['save_step'] == 0:
         print 'Saving model...'
@@ -149,7 +152,7 @@ while params['episode'] < params['episodes']:
 
         saver.save(sess, os.path.join('models', model_name, 'model.ckpt'))
 
-    if params['episode'] <= params['exploration_rate_decay']:
+    if params['frame'] <= params['exploration_rate_decay']:
         params['exploration_rate'] -= (params['initial_exploration_rate'] - params['final_exploration_rate']) / \
                                       float(params['exploration_rate_decay'])
 

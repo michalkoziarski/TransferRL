@@ -12,7 +12,7 @@ model_name = sys.argv[1]
 if len(sys.argv) > 2:
     batch = int(sys.argv[2])
 else:
-    batch = 100
+    batch = 50000
 
 df = pd.read_csv(os.path.join('models', model_name, 'log.csv'))
 
@@ -24,7 +24,7 @@ index = 1
 while index < len(df['reward']):
     k = 1
 
-    while df['episode'].iloc[index] <= df['episode'].iloc[index - k]:
+    while df['frame'].iloc[index] <= df['frame'].iloc[index - k]:
         rewards.pop()
         k += 1
 
@@ -32,13 +32,13 @@ while index < len(df['reward']):
     index += 1
 
 mean_rewards = []
-mean_episodes = []
+mean_frames = []
 index = 0
 
 while index + batch <= len(rewards):
     mean_rewards.append(np.mean(rewards[index:(index + batch)]))
-    mean_episodes.append(index + batch / 2)
+    mean_frames.append(index + batch / 2)
     index += batch
 
-sns.tsplot(data=mean_rewards, time=mean_episodes)
+sns.tsplot(data=mean_rewards, time=mean_frames)
 sns.plt.show()
