@@ -36,7 +36,8 @@ if os.path.exists(os.path.join('models', model_name)):
     _rewards = tf.placeholder(tf.float32, [None])
     _predicted_rewards = tf.reduce_sum(tf.mul(network.output, _actions), reduction_indices=1)
     cost = tf.reduce_mean(tf.square(_rewards - _predicted_rewards))
-    train_step = tf.train.AdamOptimizer(params['learning_rate']).minimize(cost)
+    train_step = tf.train.RMSPropOptimizer(learning_rate=params['learning_rate'], decay=params['learning_decay'],
+                                           momentum=params['learning_momentum']).minimize(cost)
 
     saver = tf.train.Saver()
     saver.restore(sess, os.path.join('models', model_name, 'model.ckpt'))
@@ -64,7 +65,8 @@ else:
     _rewards = tf.placeholder(tf.float32, [None])
     _predicted_rewards = tf.reduce_sum(tf.mul(network.output, _actions), reduction_indices=1)
     cost = tf.reduce_mean(tf.square(_rewards - _predicted_rewards))
-    train_step = tf.train.AdamOptimizer(params['learning_rate']).minimize(cost)
+    train_step = tf.train.RMSPropOptimizer(learning_rate=params['learning_rate'], decay=params['learning_decay'],
+                                           momentum=params['learning_momentum']).minimize(cost)
 
     sess.run(tf.initialize_all_variables())
 
