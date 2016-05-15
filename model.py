@@ -8,15 +8,13 @@ class Network:
 
         self.state = tf.placeholder(tf.float32, shape=([None] + self.input_shape))
 
-        self.W_conv1 = self._weight([3, 3, self.input_shape[2], 16])
-        self.b_conv1 = self._bias([16])
+        self.W_conv1 = self._weight([3, 3, self.input_shape[2], 32])
+        self.b_conv1 = self._bias([32])
         self.h_conv1 = tf.nn.relu(self._conv(self.state, self.W_conv1, 2) + self.b_conv1)
-        #self.h_pool1 = self._pool(self.h_conv1)
 
-        self.W_conv2 = self._weight([2, 2, 16, 32])
-        self.b_conv2 = self._bias([32])
-        self.h_conv2 = tf.nn.relu(self._conv(self.h_conv1, self.W_conv2, 1) + self.b_conv2)
-        #self.h_pool2 = self._pool(self.h_conv2)
+        self.W_conv2 = self._weight([3, 3, 32, 64])
+        self.b_conv2 = self._bias([64])
+        self.h_conv2 = tf.nn.relu(self._conv(self.h_conv1, self.W_conv2, 2) + self.b_conv2)
 
         dim = 1
         for d in self.h_conv2.get_shape()[1:].as_list():
@@ -24,11 +22,11 @@ class Network:
 
         self.flat = tf.reshape(self.h_conv2, [-1, dim])
 
-        self.W_flat = self._weight([dim, 128])
-        self.b_flat = self._bias([128])
+        self.W_flat = self._weight([dim, 512])
+        self.b_flat = self._bias([512])
         self.h_flat = tf.nn.relu(tf.matmul(self.flat, self.W_flat) + self.b_flat)
 
-        self.W_output = self._weight([128] + self.output_shape)
+        self.W_output = self._weight([512] + self.output_shape)
         self.b_output = self._bias(self.output_shape)
 
         self.output = tf.matmul(self.h_flat, self.W_output) + self.b_output
