@@ -4,178 +4,198 @@ import cPickle
 import os
 import matplotlib.pyplot as plt
 import pandas as pd
+import argparse
 
 from gridworld import *
 from model import Network
 from collections import deque
 
 
-sess = tf.InteractiveSession()
+class Trainer:
+    def __init__(self, **kwargs):
+        self.model_name = kwargs.get('model_name', time.strftime('%Y_%m_%d_%H-%M-%S', time.gmtime()))
+        self.display_flag = kwargs.get('display_flag', False)
+        self.verbose = kwargs.get('verbose', True)
 
-if len(sys.argv) > 1:
-    model_name = sys.argv[1]
-else:
-    model_name = time.strftime('%Y_%m_%d_%H-%M-%S', time.gmtime())
+        self.root_path = 'models'
+        self.default_params_path = 'params.json'
+        self.results_path = os.path.join(self.root_path, self.model_name)
+        self.model_path = os.path.join(self.results_path, 'model.ckpt')
+        self.params_path = os.path.join(self.results_path, 'params.json')
+        self.replay_memory_path = os.path.join(self.results_path, 'replay_memory.pickle')
+        self.plot_path = os.path.join(self.results_path, 'rewards.png')
+        self.episode_log_path = os.path.join(self.results_path, 'episodes.log')
+        self.frame_log_path = os.path.join(self.results_path, 'frames.log')
 
-if len(sys.argv) > 2:
-    display_flag = bool(sys.argv[2])
-else:
-    display_flag = False
+        self.sess = tf.InteractiveSession()
 
-if os.path.exists(os.path.join('models', model_name)):
-    print 'Loading model %s...' % model_name
-
-    with open(os.path.join('models', model_name, 'params.json')) as f:
-        params = json.load(f)
-
-    with open(os.path.join('models', model_name, 'replay_memory.pickle'), 'rb') as f:
-        replay_memory = cPickle.load(f)
-
-    network = Network(input_shape=[params['width'], params['height'], params['memory']],
-                      output_shape=[params['actions']])
-
-    _actions = tf.placeholder(tf.float32, [None, params['actions']])
-    _rewards = tf.placeholder(tf.float32, [None])
-    _predicted_rewards = tf.reduce_sum(tf.mul(network.output, _actions), reduction_indices=1)
-    cost = tf.reduce_mean(tf.square(_rewards - _predicted_rewards))
-    train_step = tf.train.RMSPropOptimizer(learning_rate=params['learning_rate'], decay=params['learning_decay'],
-                                           momentum=params['learning_momentum']).minimize(cost)
-
-    saver = tf.train.Saver()
-    saver.restore(sess, os.path.join('models', model_name, 'model.ckpt'))
-
-    reward_history = list(pd.read_csv(os.path.join('models', model_name, 'episodes.log'))['reward'])
-else:
-    print 'Initializing model %s...' % model_name
-
-    if not os.path.exists('models'):
-        os.mkdir('models')
-
-    os.mkdir(os.path.join('models', model_name))
-
-    with open('params.json') as f:
-        params = json.load(f)
-
-    params['model_name'] = model_name
-    params['episode'] = 0
-    params['frame'] = 0
-    params['exploration_rate'] = params['initial_exploration_rate']
-
-    replay_memory = deque()
-
-    network = Network(input_shape=[params['width'], params['height'], params['memory']],
-                      output_shape=[params['actions']])
-
-    _actions = tf.placeholder(tf.float32, [None, params['actions']])
-    _rewards = tf.placeholder(tf.float32, [None])
-    _predicted_rewards = tf.reduce_sum(tf.mul(network.output, _actions), reduction_indices=1)
-    cost = tf.reduce_mean(tf.square(_rewards - _predicted_rewards))
-    train_step = tf.train.RMSPropOptimizer(learning_rate=params['learning_rate'], decay=params['learning_decay'],
-                                           momentum=params['learning_momentum']).minimize(cost)
-
-    sess.run(tf.initialize_all_variables())
-
-    with open(os.path.join('models', model_name, 'frames.log'), 'w') as f:
-        f.write('frame,reward\n')
-
-    with open(os.path.join('models', model_name, 'episodes.log'), 'w') as f:
-        f.write('episode,reward\n')
-
-    with open(os.path.join('models', model_name, 'params.json'), 'w') as f:
-        json.dump(params, f, indent=2, separators=(',', ': '))
-
-    with open(os.path.join('models', model_name, 'replay_memory.pickle'), 'wb') as f:
-        cPickle.dump(replay_memory, f)
-
-    saver = tf.train.Saver()
-    saver.save(sess, os.path.join('models', model_name, 'model.ckpt'))
-
-    reward_history = []
-
-if display_flag or params['display']:
-    display = Display(width=params['width'], height=params['height'])
-
-while params['frame'] < params['frames']:
-    gw = GridWorld(entities={Goal: 1}, width=params['width'], height=params['height'])
-
-    while True:
-        state = gw.state(memory=params['memory'])
-        predicted_rewards = network.output.eval(feed_dict={network.state: state})
-
-        if (display_flag or params['display']) and params['episode'] % params['display_step'] == 0:
-            display.draw(gw, predicted_rewards[0])
-            time.sleep(0.01)
-
-        if random.random() <= params['exploration_rate']:
-            action = random.randrange(params['actions'])
+        if os.path.exists(self.results_path):
+            self.load()
         else:
-            action = np.argmax(predicted_rewards)
+            self.initialize()
 
-        reward = gw.act(action)
-        next_state = gw.state(memory=params['memory'])
+        if self.display_flag:
+            self.display = Display(width=self.params['width'], height=self.params['height'])
 
-        with open(os.path.join('models', model_name, 'frames.log'), 'a') as f:
-            f.write('%d,%.2f\n' % (params['frame'], reward))
+    def initialize(self):
+        if self.verbose:
+            print 'Initializing model %s...' % self.model_name
 
-        terminal = (True if (gw.terminal() or gw.t() >= params['episode_length']) else False)
+        if not os.path.exists(self.root_path):
+            os.mkdir(self.root_path)
 
-        replay_memory.append((state, action, reward, next_state, terminal))
+        os.mkdir(self.results_path)
 
-        if len(replay_memory) >= params['replay_memory_size']:
-            replay_memory.popleft()
+        with open(self.default_params_path) as f:
+            self.params = json.load(f)
 
-        if params['frame'] >= params['replay_start']:
-            batch = random.sample(replay_memory, params['batch_size'])
+        self.params['model_name'] = self.model_name
+        self.params['current_episode'] = 0
+        self.params['current_frame'] = 0
+        self.params['current_exploration_rate'] = self.params['initial_exploration_rate']
 
-            states = [b[0] for b in batch]
-            rewards = [b[2] for b in batch]
-            actions = []
+        self.replay_memory = deque()
+        self.reward_history = []
 
-            for i in range(len(batch)):
-                actions.append(np.zeros([params['actions']]))
-                actions[i][batch[i][1]] = 1
+        with open(self.frame_log_path, 'w') as f:
+            f.write('frame,reward\n')
 
-                if not batch[i][4]:
-                    rewards[i] += params['reward_decay'] * np.max(network.output.eval(feed_dict={network.state: batch[i][3]}))
+        with open(self.episode_log_path, 'w') as f:
+            f.write('episode,reward\n')
 
-            states = np.reshape(states, [-1, params['width'], params['height'], params['memory']])
+        with open(self.params_path, 'w') as f:
+            json.dump(self.params, f, indent=2, separators=(',', ': '))
 
-            train_step.run(feed_dict={_actions: actions, _rewards: rewards, network.state: states})
+        with open(self.replay_memory_path, 'wb') as f:
+            cPickle.dump(self.replay_memory, f)
 
-        params['frame'] += 1
+        self.init_tf()
+        self.sess.run(tf.initialize_all_variables())
+        self.save()
 
-        if terminal:
-            with open(os.path.join('models', model_name, 'episodes.log'), 'a') as f:
-                f.write('%d,%.2f\n' % (params['episode'], gw.total_reward()))
+    def load(self):
+        if self.verbose:
+            print 'Loading model %s...' % self.model_name
 
-            reward_history.append(gw.total_reward())
+        with open(self.params_path) as f:
+            self.params = json.load(f)
 
-            if params['episode'] % params['display_step'] == 0:
-                plt.figure()
-                plt.plot(range(1, len(reward_history) + 1), reward_history)
-                plt.xlabel('episode')
-                plt.ylabel('reward')
-                plt.savefig(os.path.join('models', model_name, 'rewards.png'))
-                plt.close()
+        with open(self.replay_memory_path, 'rb') as f:
+            self.replay_memory = cPickle.load(f)
 
-            break
+        self.reward_history = list(pd.read_csv(self.episode_log_path)['reward'])
 
-    print 'Episode #%d: total reward of %.2f in %d steps, with exploration rate %.2f' % \
-          (params['episode'], gw.total_reward(), gw.t(), params['exploration_rate'])
+        self.init_tf()
+        self.restore()
 
-    if params['episode'] % params['save_step'] == 0:
-        print 'Saving model...'
+    def init_tf(self):
+        self.network = Network(input_shape=[self.params['width'], self.params['height'], self.params['memory']],
+                               output_shape=[self.params['actions']])
 
-        with open(os.path.join('models', model_name, 'params.json'), 'w') as f:
-            json.dump(params, f, indent=2, separators=(',', ': '))
+        self._actions = tf.placeholder(tf.float32, [None, self.params['actions']])
+        self._rewards = tf.placeholder(tf.float32, [None])
+        self._predicted_rewards = tf.reduce_sum(tf.mul(self.network.output, self._actions), reduction_indices=1)
+        self.cost = tf.reduce_mean(tf.square(self._rewards - self._predicted_rewards))
+        self.train_step = tf.train.RMSPropOptimizer(learning_rate=self.params['learning_rate'],
+                                                    decay=self.params['learning_decay'],
+                                                    momentum=self.params['learning_momentum']).minimize(self.cost)
+        self.saver = tf.train.Saver()
 
-        with open(os.path.join('models', model_name, 'replay_memory.pickle'), 'wb') as f:
-            cPickle.dump(replay_memory, f)
+    def save(self):
+        self.saver.save(self.sess, self.model_path)
 
-        saver.save(sess, os.path.join('models', model_name, 'model.ckpt'))
+    def restore(self):
+        self.saver.restore(self.sess, self.model_path)
 
-    if params['frame'] <= params['exploration_rate_decay']:
-        params['exploration_rate'] -= (params['initial_exploration_rate'] - params['final_exploration_rate']) / \
-                                      float(params['exploration_rate_decay'])
+    def train(self):
+        while self.params['current_frame'] < self.params['frames']:
+            gw = GridWorld(entities={Goal: 1}, width=self.params['width'], height=self.params['height'])
 
-    params['episode'] += 1
+            while True:
+                state = gw.state(memory=self.params['memory'])
+                predicted_rewards = self.network.output.eval(feed_dict={self.network.state: state})
+
+                if self.display_flag and self.params['current_episode'] % self.params['display_step'] == 0:
+                    self.display.draw(gw, predicted_rewards[0])
+                    time.sleep(0.01)
+
+                if random.random() <= self.params['current_exploration_rate']:
+                    action = random.randrange(self.params['actions'])
+                else:
+                    action = np.argmax(predicted_rewards)
+
+                reward = gw.act(action)
+                next_state = gw.state(memory=self.params['memory'])
+
+                with open(self.frame_log_path, 'a') as f:
+                    f.write('%d,%.2f\n' % (self.params['current_frame'], reward))
+
+                terminal = (True if (gw.terminal() or gw.t() >= self.params['episode_length']) else False)
+
+                self.replay_memory.append((state, action, reward, next_state, terminal))
+
+                if len(self.replay_memory) >= self.params['replay_memory_size']:
+                    self.replay_memory.popleft()
+
+                if self.params['current_frame'] >= self.params['replay_start']:
+                    batch = random.sample(self.replay_memory, self.params['batch_size'])
+
+                    states = [b[0] for b in batch]
+                    rewards = [b[2] for b in batch]
+                    actions = []
+
+                    for i in range(len(batch)):
+                        actions.append(np.zeros([self.params['actions']]))
+                        actions[i][batch[i][1]] = 1
+
+                        if not batch[i][4]:
+                            rewards[i] += self.params['reward_decay'] * np.max(
+                                self.network.output.eval(feed_dict={self.network.state: batch[i][3]}))
+
+                    states = np.reshape(states, [-1, self.params['width'], self.params['height'],
+                                                 self.params['memory']])
+
+                    self.train_step.run(feed_dict={self._actions: actions, self._rewards: rewards,
+                                                   self.network.state: states})
+
+                self.params['current_frame'] += 1
+
+                if terminal:
+                    with open(self.episode_log_path, 'a') as f:
+                        f.write('%d,%.2f\n' % (self.params['current_episode'], gw.total_reward()))
+
+                    self.reward_history.append(gw.total_reward())
+
+                    if self.params['current_episode'] % self.params['display_step'] == 0:
+                        self.plot()
+
+                    break
+
+            print 'Episode #%d: total reward of %.2f in %d steps, with exploration rate %.2f' % \
+                  (self.params['current_episode'], gw.total_reward(), gw.t(), self.params['current_exploration_rate'])
+
+            if self.params['current_episode'] % self.params['save_step'] == 0:
+                print 'Saving model...'
+
+                with open(self.params_path, 'w') as f:
+                    json.dump(self.params, f, indent=2, separators=(',', ': '))
+
+                with open(self.replay_memory_path, 'wb') as f:
+                    cPickle.dump(self.replay_memory, f)
+
+                self.save()
+
+            if self.params['current_frame'] <= self.params['exploration_rate_decay']:
+                self.params['current_exploration_rate'] -= (self.params['initial_exploration_rate'] -
+                                                            self.params['final_exploration_rate']) / \
+                                                           float(self.params['exploration_rate_decay'])
+
+            self.params['current_episode'] += 1
+
+    def plot(self):
+        plt.figure()
+        plt.plot(range(1, len(self.reward_history) + 1), self.reward_history)
+        plt.xlabel('episode')
+        plt.ylabel('reward')
+        plt.savefig(self.plot_path)
+        plt.close()
