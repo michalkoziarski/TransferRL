@@ -199,3 +199,13 @@ class Trainer:
         plt.ylabel('reward')
         plt.savefig(self.plot_path)
         plt.close()
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--model_name')
+    parser.add_argument('--display')
+    parser.add_argument('--verbose')
+
+    trainer = Trainer(**vars(parser.parse_args()))
+    trainer.train()
