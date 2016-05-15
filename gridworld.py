@@ -1,11 +1,15 @@
-import pygame
 import random
 import time
 import sys
 import numpy as np
+import warnings
 
 from enum import Enum
 
+try:
+    import pygame
+except ImportError:
+    warnings.warn('PyGame not detected, trying to run without it.')
 
 Direction = Enum('Direction', 'left right up down')
 
