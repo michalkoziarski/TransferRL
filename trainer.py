@@ -192,13 +192,17 @@ class Trainer:
 
             self.params['current_episode'] += 1
 
-    def plot(self):
-        plt.figure()
-        plt.plot(range(1, len(self.reward_history) + 1), self.reward_history)
-        plt.xlabel('episode')
-        plt.ylabel('reward')
-        plt.savefig(self.plot_path)
-        plt.close()
+    def plot(self, window=100):
+        episodes = range(window / 2, len(self.reward_history) - window / 2)
+        means = [np.mean(self.reward_history[(i - window / 2):(i + window / 2)]) for i in episodes]
+        
+        if len(means) > 0:
+            plt.figure()
+            plt.plot(episodes, means)
+            plt.xlabel('episode')
+            plt.ylabel('reward')
+            plt.savefig(self.plot_path)
+            plt.close()
 
 
 if __name__ == '__main__':
