@@ -2,7 +2,7 @@
   "actions": 4,
   "width": 10,
   "height": 10,
-  "memory": 2,
+  "memory": 1,
   "learning_rate": 0.00025,
   "learning_decay": 0.95,
   "learning_momentum": 0.95,
@@ -16,6 +16,6 @@
   "frames": 5000000,
   "replay_start": 10000,
   "display": false,
-  "display_step": 1,
-  "save_step": 100
+  "display_step": 100,
+  "save_step": 10000
 }

@@ -2,6 +2,8 @@ import tensorflow as tf
 import json
 import cPickle
 import os
+import matplotlib.pyplot as plt
+import pandas as pd
 
 from gridworld import *
 from model import Network
@@ -41,6 +43,8 @@ if os.path.exists(os.path.join('models', model_name)):
 
     saver = tf.train.Saver()
     saver.restore(sess, os.path.join('models', model_name, 'model.ckpt'))
+
+    reward_history = list(pd.read_csv(os.path.join('models', model_name, 'episodes.log'))['reward'])
 else:
     print 'Initializing model %s...' % model_name
 
@@ -71,8 +75,11 @@ else:
 
     sess.run(tf.initialize_all_variables())
 
-    with open(os.path.join('models', model_name, 'log.csv'), 'w') as f:
+    with open(os.path.join('models', model_name, 'frames.log'), 'w') as f:
         f.write('frame,reward\n')
+
+    with open(os.path.join('models', model_name, 'episodes.log'), 'w') as f:
+        f.write('episode,reward\n')
 
     with open(os.path.join('models', model_name, 'params.json'), 'w') as f:
         json.dump(params, f, indent=2, separators=(',', ': '))
@@ -82,6 +89,8 @@ else:
 
     saver = tf.train.Saver()
     saver.save(sess, os.path.join('models', model_name, 'model.ckpt'))
+
+    reward_history = []
 
 if display_flag or params['display']:
     display = Display(width=params['width'], height=params['height'])
@@ -105,7 +114,7 @@ while params['frame'] < params['frames']:
         reward = gw.act(action)
         next_state = gw.state(memory=params['memory'])
 
-        with open(os.path.join('models', model_name, 'log.csv'), 'a') as f:
+        with open(os.path.join('models', model_name, 'frames.log'), 'a') as f:
             f.write('%d,%.2f\n' % (params['frame'], reward))
 
         terminal = (True if (gw.terminal() or gw.t() >= params['episode_length']) else False)
@@ -136,6 +145,19 @@ while params['frame'] < params['frames']:
         params['frame'] += 1
 
         if terminal:
+            with open(os.path.join('models', model_name, 'episodes.log'), 'a') as f:
+                f.write('%d,%.2f\n' % (params['episode'], gw.total_reward()))
+
+            reward_history.append(gw.total_reward())
+
+            if params['episode'] % params['display_step'] == 0:
+                plt.figure()
+                plt.plot(range(1, len(reward_history) + 1), reward_history)
+                plt.xlabel('episode')
+                plt.ylabel('reward')
+                plt.savefig(os.path.join('models', model_name, 'rewards.png'))
+                plt.close()
+
             break
 
     print 'Episode #%d: total reward of %.2f in %d steps, with exploration rate %.2f' % \
