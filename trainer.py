@@ -160,6 +160,13 @@ class Trainer:
 
                 self.params['current_frame'] += 1
 
+                if self.params['current_frame'] <= self.params['exploration_rate_decay']:
+                    self.params['current_exploration_rate'] = self.params['initial_exploration_rate'] + \
+                                                              self.params['current_frame'] * \
+                                                              (self.params['final_exploration_rate'] -
+                                                               self.params['initial_exploration_rate']) \
+                                                              / float(self.params['exploration_rate_decay'])
+
                 if terminal:
                     with open(self.episode_log_path, 'a') as f:
                         f.write('%d,%.2f\n' % (self.params['current_episode'], gw.total_reward()))
@@ -185,17 +192,12 @@ class Trainer:
 
                 self.save()
 
-            if self.params['current_frame'] <= self.params['exploration_rate_decay']:
-                self.params['current_exploration_rate'] -= (self.params['initial_exploration_rate'] -
-                                                            self.params['final_exploration_rate']) / \
-                                                           float(self.params['exploration_rate_decay'])
-
             self.params['current_episode'] += 1
 
     def plot(self, window=100):
         episodes = range(window / 2, len(self.reward_history) - window / 2)
         means = [np.mean(self.reward_history[(i - window / 2):(i + window / 2)]) for i in episodes]
-        
+
         if len(means) > 0:
             plt.figure()
             plt.plot(episodes, means)

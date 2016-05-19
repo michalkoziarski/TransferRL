@@ -7,14 +7,14 @@
   "learning_decay": 0.95,
   "learning_momentum": 0.95,
   "reward_decay": 0.99,
-  "replay_memory_size": 100000,
+  "replay_memory_size": 50000,
   "batch_size": 32,
   "initial_exploration_rate": 1.0,
   "final_exploration_rate": 0.1,
-  "exploration_rate_decay": 10000,
+  "exploration_rate_decay": 50000,
   "episode_length": 100,
   "frames": 5000000,
-  "replay_start": 1000,
-  "display_step": 100,
+  "replay_start": 10000,
+  "display_step": 10000,
   "save_step": 10000
 }
