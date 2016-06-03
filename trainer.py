@@ -96,9 +96,7 @@ class Trainer:
         self._rewards = tf.placeholder(tf.float32, [None])
         self._predicted_rewards = tf.reduce_sum(tf.mul(self.network.output, self._actions), reduction_indices=1)
         self.cost = tf.reduce_mean(tf.square(self._rewards - self._predicted_rewards))
-        self.train_step = tf.train.RMSPropOptimizer(learning_rate=self.params['learning_rate'],
-                                                    decay=self.params['learning_decay'],
-                                                    momentum=self.params['learning_momentum']).minimize(self.cost)
+        self.train_step = tf.train.AdamOptimizer(learning_rate=self.params['learning_rate']).minimize(self.cost)
         self.saver = tf.train.Saver()
 
     def save(self):
@@ -194,7 +192,7 @@ class Trainer:
 
             self.params['current_episode'] += 1
 
-    def plot(self, window=100):
+    def plot(self, window=5000):
         episodes = range(window / 2, len(self.reward_history) - window / 2)
         means = [np.mean(self.reward_history[(i - window / 2):(i + window / 2)]) for i in episodes]
 
