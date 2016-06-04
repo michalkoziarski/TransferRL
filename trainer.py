@@ -19,7 +19,7 @@ class Trainer:
 
         self.root_path = 'models'
         self.default_params_path = 'params.json'
-        self.default_world_path = 'world.json'
+        self.default_world_path = kwargs.get('world_path', 'world.json')
         self.results_path = os.path.join(self.root_path, self.model_name)
         self.model_path = os.path.join(self.results_path, 'model.ckpt')
         self.params_path = os.path.join(self.results_path, 'params.json')
@@ -51,7 +51,7 @@ class Trainer:
         with open(self.default_params_path) as f:
             self.params = json.load(f)
 
-        with open(self.world_path) as f:
+        with open(self.default_world_path) as f:
             self.world = json.load(f)
 
         self.entities = {}
