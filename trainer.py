@@ -23,7 +23,7 @@ class Trainer:
         self.results_path = os.path.join(self.root_path, self.model_name)
         self.model_path = os.path.join(self.results_path, 'model.ckpt')
         self.params_path = os.path.join(self.results_path, 'params.json')
-        self.world_path = kwargs.get('world_path', os.path.join(self.results_path, self.default_world_path))
+        self.world_path = os.path.join(self.results_path, self.default_world_path)
         self.replay_memory_path = os.path.join(self.results_path, 'replay_memory.pickle')
         self.plot_path = os.path.join(self.results_path, 'rewards.png')
         self.episode_log_path = os.path.join(self.results_path, 'episodes.log')
