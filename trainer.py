@@ -19,9 +19,11 @@ class Trainer:
 
         self.root_path = 'models'
         self.default_params_path = 'params.json'
+        self.default_world_path = 'world.json'
         self.results_path = os.path.join(self.root_path, self.model_name)
         self.model_path = os.path.join(self.results_path, 'model.ckpt')
         self.params_path = os.path.join(self.results_path, 'params.json')
+        self.world_path = kwargs.get('world_path', os.path.join(self.results_path, self.default_world_path))
         self.replay_memory_path = os.path.join(self.results_path, 'replay_memory.pickle')
         self.plot_path = os.path.join(self.results_path, 'rewards.png')
         self.episode_log_path = os.path.join(self.results_path, 'episodes.log')
@@ -49,6 +51,14 @@ class Trainer:
         with open(self.default_params_path) as f:
             self.params = json.load(f)
 
+        with open(self.world_path) as f:
+            self.world = json.load(f)
+
+        self.entities = {}
+
+        for k, v in self.world.iteritems():
+            self.entities[eval(k)] = v
+
         self.params['model_name'] = self.model_name
         self.params['current_episode'] = 0
         self.params['current_frame'] = 0
@@ -66,6 +76,9 @@ class Trainer:
         with open(self.params_path, 'w') as f:
             json.dump(self.params, f, indent=2, separators=(',', ': '))
 
+        with open(self.world_path, 'w') as f:
+            json.dump(self.world, f, indent=2, separators=(',', ': '))
+
         with open(self.replay_memory_path, 'wb') as f:
             cPickle.dump(self.replay_memory, f)
 
@@ -79,6 +92,14 @@ class Trainer:
 
         with open(self.params_path) as f:
             self.params = json.load(f)
+
+        with open(self.world_path) as f:
+            self.world = json.load(f)
+
+        self.entities = {}
+
+        for k, v in self.world.iteritems():
+            self.entities[eval(k)] = v
 
         with open(self.replay_memory_path, 'rb') as f:
             self.replay_memory = cPickle.load(f)
@@ -107,7 +128,7 @@ class Trainer:
 
     def train(self):
         while self.params['current_frame'] < self.params['frames']:
-            gw = GridWorld(entities={Goal: 1}, width=self.params['width'], height=self.params['height'])
+            gw = GridWorld(entities=self.entities, width=self.params['width'], height=self.params['height'])
 
             while True:
                 state = gw.state(memory=self.params['memory'])
@@ -208,6 +229,7 @@ class Trainer:
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--model_name')
+    parser.add_argument('--world')
     parser.add_argument('--display')
     parser.add_argument('--verbose')
 
