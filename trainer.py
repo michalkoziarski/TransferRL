@@ -213,6 +213,15 @@ class Trainer:
 
             self.params['current_episode'] += 1
 
+        self.save()
+        self.plot()
+
+        with open(self.params_path, 'w') as f:
+            json.dump(self.params, f, indent=2, separators=(',', ': '))
+
+        with open(self.replay_memory_path, 'wb') as f:
+            cPickle.dump(self.replay_memory, f)
+
     def plot(self, window=5000):
         episodes = range(window / 2, len(self.reward_history) - window / 2)
         means = [np.mean(self.reward_history[(i - window / 2):(i + window / 2)]) for i in episodes]
