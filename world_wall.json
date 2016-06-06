@@ -3,8 +3,5 @@
   "Coin": 15,
   "Water": 10,
   "Fire": 5,
-  "Wall": 20,
-  "Portal": 5,
-  "Switch": 3,
-  "Door": 5
+  "Wall": 10
 }
