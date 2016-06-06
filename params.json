@@ -9,10 +9,10 @@
   "batch_size": 32,
   "initial_exploration_rate": 1.0,
   "final_exploration_rate": 0.1,
-  "exploration_rate_decay": 1000000,
+  "exploration_rate_decay": 2500000,
   "episode_length": 100,
-  "frames": 10000000,
+  "frames": 15000000,
   "replay_start": 50000,
   "display_step": 10000,
-  "save_step": 5000
+  "save_step": 10000
 }
