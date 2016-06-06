@@ -1,6 +1,6 @@
 #!/bin/bash
 
-worlds=("simple" "coin" "water_fire" "coin_water_fire" "portal" "door" "door_portal" "full")
+worlds=("goal" "coin" "water" "fire" "wall" "portal" "door")
 
 for i in {1..3}; do
     for world in ${worlds[@]}; do
