@@ -1,7 +1,7 @@
 {
   "Goal": 1,
-  "Coin": 15,
+  "Coin": 10,
   "Water": 10,
   "Fire": 5,
-  "Wall": 10
+  "Wall": 5
 }
