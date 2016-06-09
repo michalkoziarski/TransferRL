@@ -33,18 +33,11 @@ class Network:
         self.output = tf.matmul(self.h_flat, self.W_output) + self.b_output
 
     @staticmethod
-    def _weight(shape, value_range=None):
-        if value_range is None:
-            dim = 1
-            for d in shape:
-                dim *= d
-
-            value_range = 1. / np.sqrt(dim)
-
-        return tf.Variable(tf.truncated_normal(shape, -value_range, value_range))
+    def _weight(shape, stddev=0.01):
+        return tf.Variable(tf.truncated_normal(shape, stddev=stddev))
 
     @staticmethod
-    def _bias(shape, value=0.):
+    def _bias(shape, value=0.01):
         return tf.Variable(tf.constant(value, shape=shape))
 
     @staticmethod

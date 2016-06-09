@@ -12,7 +12,7 @@
   "exploration_rate_decay": 1000000,
   "episode_length": 100,
   "frames": 5000000,
-  "replay_start": 50000,
+  "replay_start": 100000,
   "display_step": 10000,
   "save_step": 10000
 }
