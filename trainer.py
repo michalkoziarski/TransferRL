@@ -9,11 +9,13 @@ import argparse
 from gridworld import *
 from model import Network
 from collections import deque
+from shutil import copyfile
 
 
 class Trainer:
     def __init__(self, **kwargs):
         self.model_name = kwargs.get('model_name', time.strftime('%Y_%m_%d_%H-%M-%S', time.gmtime()))
+        self.curriculum_name = kwargs.get('curriculum_name', None)
         self.display_flag = kwargs.get('display_flag', False)
         self.verbose = kwargs.get('verbose', True)
 
@@ -22,6 +24,7 @@ class Trainer:
         self.default_world_path = kwargs.get('world_path', 'world.json')
         self.results_path = os.path.join(self.root_path, self.model_name)
         self.model_path = os.path.join(self.results_path, 'model.ckpt')
+        self.checkpoint_path = os.path.join(self.results_path, 'checkpoint')
         self.params_path = os.path.join(self.results_path, 'params.json')
         self.world_path = os.path.join(self.results_path, self.default_world_path)
         self.replay_memory_path = os.path.join(self.results_path, 'replay_memory.pickle')
@@ -83,8 +86,18 @@ class Trainer:
             cPickle.dump(self.replay_memory, f)
 
         self.init_tf()
-        self.sess.run(tf.initialize_all_variables())
-        self.save()
+
+        if self.curriculum_name:
+            curriculum_path = os.path.join(self.root_path, self.curriculum_name)
+
+            copyfile(os.path.join(curriculum_path, 'model.ckpt'), self.model_path)
+            copyfile(os.path.join(curriculum_path, 'checkpoint'), self.checkpoint_path)
+
+            self.sess.run(tf.initialize_all_variables())
+            self.restore()
+        else:
+            self.sess.run(tf.initialize_all_variables())
+            self.save()
 
     def load(self):
         if self.verbose:
@@ -238,6 +251,7 @@ class Trainer:
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--model_name')
+    parser.add_argument('--curriculum_name')
     parser.add_argument('--world_path')
     parser.add_argument('--display')
     parser.add_argument('--verbose')
